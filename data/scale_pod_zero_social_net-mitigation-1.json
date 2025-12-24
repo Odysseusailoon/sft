@@ -1,0 +1,497 @@
+{
+  "problem_id": "scale_pod_zero_social_net-mitigation-1",
+  "system_state_summary": "# 系统状态总结\n\n## 故障根本原因\nuser-service部署的副本数被设置为0，导致该服务完全不可用。这是一个配置错误问题。\n\n## 修复操作\n通过执行kubectl scale命令将user-service的replicas从0扩展到1，成功恢复了服务。\n\n## 故障现象\n- user-service deployment的replicas字段被设置为0 [T24](1)\n- test-social-network命名空间中缺少user-service的运行Pod [T3](2)\n- 依赖user-service的其他微服务调用失败\n\n## 受影响资源\n- **Namespace**: test-social-network [T0](3)\n- **异常Deployment**: user-service (初始replicas: 0) [T24](1)\n- **相关服务**: compose-post-service, home-timeline-service, social-graph-service等27个其他正常运行的服务 [T17](4) [T20](5)\n\n## 修复方案\n执行命令：`kubectl scale deployment user-service -n test-social-network --replicas=1` [T36](6)\n修复结果：deployment.apps/user-service scaled [T36](6)\n\n## 验证步骤\n1. 检查Pod状态和标签：`kubectl get pods -n test-social-network --show-labels` [T3](2)\n2. 检查Service配置：`kubectl get services -n test-social-network -o wide` [T17](4)\n3. 检查Deployment状态：`kubectl get deployments -n test-social-network -o wide` [T20](5)\n4. 查看user-service详细配置：`kubectl get deployment user-service -n test-social-network -o yaml` [T24](1)\n5. 执行修复操作并验证成功 [T36](6)\n\n## 影响范围\n社交网络应用的用户认证、注册、登录、关注/取消关注等核心功能在修复前完全不可用，修复后恢复正常 [T0](3) [AI KNOWLEDGE]({})。",
+  "execution_info": {
+    "start_time": "2025-12-24T18:11:48.665319",
+    "end_time": "2025-12-24T18:12:40.428198",
+    "duration_seconds": 51.762879,
+    "total_commands": 69,
+    "successful_commands": 69,
+    "failed_commands": 0
+  },
+  "commands": [
+    {
+      "original_command": "exec_shell(\"kubectl get pods -n test-social-network --show-labels\")",
+      "command": "exec_shell(\"kubectl get pods -n test-social-network-ad7ce5c3 --show-labels\")",
+      "result": "NAME                                      READY   STATUS    RESTARTS   AGE   LABELS\ncompose-post-service-64f6c9b656-2wbdx     1/1     Running   0          49s   app=compose-post-service,pod-template-hash=64f6c9b656,service=compose-post-service\nhome-timeline-redis-ff9499c5c-m6cb9       1/1     Running   0          47s   app=home-timeline-redis,pod-template-hash=ff9499c5c,service=home-timeline-redis\nhome-timeline-service-7d787c8dfd-bcc6k    1/1     Running   0          49s   app=home-timeline-service,pod-template-hash=7d787c8dfd,service=home-timeline-service\njaeger-7d8548779-7mbz7                    1/1     Running   0          47s   app=jaeger,pod-template-hash=7d8548779,service=jaeger\nmedia-frontend-fbcbcd8cd-7rcwq            1/1     Running   0          49s   app=media-frontend,pod-template-hash=fbcbcd8cd,service=media-frontend\nmedia-memcached-54b5cffb48-sdpm7          1/1     Running   0          49s   app=media-memcached,pod-template-hash=54b5cffb48,service=media-memcached\nmedia-mongodb-6d47ccb779-8mq59            1/1     Running   0          49s   app=media-mongodb,pod-template-hash=6d47ccb779,service=media-mongodb\nmedia-service-5f6b5dbff8-vxwlw            1/1     Running   0          47s   app=media-service,pod-template-hash=5f6b5dbff8,service=media-service\nnginx-thrift-5b6bf645f-qzrkx              1/1     Running   0          49s   app=nginx-thrift,pod-template-hash=5b6bf645f,service=nginx-thrift\npost-storage-memcached-5b544b79d8-w6pjf   1/1     Running   0          47s   app=post-storage-memcached,pod-template-hash=5b544b79d8,service=post-storage-memcached\npost-storage-mongodb-846dcb76b7-nms74     1/1     Running   0          48s   app=post-storage-mongodb,pod-template-hash=846dcb76b7,service=post-storage-mongodb\npost-storage-service-9bd8bd979-nnqqq      1/1     Running   0          48s   app=post-storage-service,pod-template-hash=9bd8bd979,service=post-storage-service\nsocial-graph-mongodb-69ddddf895-l58lf     1/1     Running   0          49s   app=social-graph-mongodb,pod-template-hash=69ddddf895,service=social-graph-mongodb\nsocial-graph-redis-f9759b67d-hsndj        1/1     Running   0          49s   app=social-graph-redis,pod-template-hash=f9759b67d,service=social-graph-redis\nsocial-graph-service-fcfb99f8f-ftbgl      1/1     Running   0          48s   app=social-graph-service,pod-template-hash=fcfb99f8f,service=social-graph-service\ntext-service-585f7cbc5f-9c9gp             1/1     Running   0          49s   app=text-service,pod-template-hash=585f7cbc5f,service=text-service\nunique-id-service-655cc57f6d-kp2j9        1/1     Running   0          47s   app=unique-id-service,pod-template-hash=655cc57f6d,service=unique-id-service\nurl-shorten-memcached-999559bdb-lp7m9     1/1     Running   0          49s   app=url-shorten-memcached,pod-template-hash=999559bdb,service=url-shorten-memcached\nurl-shorten-mongodb-77894f9b76-856zf      1/1     Running   0          48s   app=url-shorten-mongodb,pod-template-hash=77894f9b76,service=url-shorten-mongodb\nurl-shorten-service-7b4f9d6cfb-xqdxt      1/1     Running   0          49s   app=url-shorten-service,pod-template-hash=7b4f9d6cfb,service=url-shorten-service\nuser-memcached-554fcf9578-952pk           1/1     Running   0          46s   app=user-memcached,pod-template-hash=554fcf9578,service=user-memcached\nuser-mention-service-69f4955bbc-qtwzf     1/1     Running   0          48s   app=user-mention-service,pod-template-hash=69f4955bbc,service=user-mention-service\nuser-mongodb-75847cfbb-tlhnv              1/1     Running   0          48s   app=user-mongodb,pod-template-hash=75847cfbb,service=user-mongodb\nuser-timeline-mongodb-658f54fd68-j2hx9    1/1     Running   0          46s   app=user-timeline-mongodb,pod-template-hash=658f54fd68,service=user-timeline-mongodb\nuser-timeline-redis-cbd5f6645-p6qx8       1/1     Running   0          46s   app=user-timeline-redis,pod-template-hash=cbd5f6645,service=user-timeline-redis\nuser-timeline-service-6c79dd65d6-h85xs    1/1     Running   0          49s   app=user-timeline-service,pod-template-hash=6c79dd65d6,service=user-timeline-service\nwrk2-job-ad7ce5c3-6qjv7                   1/1     Running   0          5s    batch.kubernetes.io/controller-uid=415b5d1c-9b51-45a4-8609-2363b2d6b6c0,batch.kubernetes.io/job-name=wrk2-job-ad7ce5c3,controller-uid=415b5d1c-9b51-45a4-8609-2363b2d6b6c0,job-name=wrk2-job-ad7ce5c3\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get services -n test-social-network -o wide\")",
+      "command": "exec_shell(\"kubectl get services -n test-social-network-ad7ce5c3 -o wide\")",
+      "result": "NAME                     TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                                                            AGE   SELECTOR\ncompose-post-service     ClusterIP   10.96.88.117    <none>        9090/TCP                                                           51s   service=compose-post-service\nhome-timeline-redis      ClusterIP   10.96.232.51    <none>        6379/TCP                                                           51s   service=home-timeline-redis\nhome-timeline-service    ClusterIP   10.96.142.15    <none>        9090/TCP                                                           51s   service=home-timeline-service\njaeger                   ClusterIP   10.96.148.54    <none>        5775/UDP,6831/UDP,6832/UDP,5778/TCP,16686/TCP,14268/TCP,9411/TCP   51s   service=jaeger\nmedia-frontend           ClusterIP   10.96.221.179   <none>        8081/TCP                                                           51s   service=media-frontend\nmedia-memcached          ClusterIP   10.96.10.206    <none>        11211/TCP                                                          51s   service=media-memcached\nmedia-mongodb            ClusterIP   10.96.165.188   <none>        27017/TCP                                                          51s   service=media-mongodb\nmedia-service            ClusterIP   10.96.182.181   <none>        9090/TCP                                                           51s   service=media-service\nnginx-thrift             ClusterIP   10.96.70.121    <none>        8080/TCP                                                           51s   service=nginx-thrift\npost-storage-memcached   ClusterIP   10.96.10.190    <none>        11211/TCP                                                          51s   service=post-storage-memcached\npost-storage-mongodb     ClusterIP   10.96.251.43    <none>        27017/TCP                                                          51s   service=post-storage-mongodb\npost-storage-service     ClusterIP   10.96.88.203    <none>        9090/TCP                                                           51s   service=post-storage-service\nsocial-graph-mongodb     ClusterIP   10.96.1.188     <none>        27017/TCP                                                          51s   service=social-graph-mongodb\nsocial-graph-redis       ClusterIP   10.96.142.107   <none>        6379/TCP                                                           51s   service=social-graph-redis\nsocial-graph-service     ClusterIP   10.96.75.85     <none>        9090/TCP                                                           51s   service=social-graph-service\ntext-service             ClusterIP   10.96.49.107    <none>        9090/TCP                                                           51s   service=text-service\nunique-id-service        ClusterIP   10.96.138.93    <none>        9090/TCP                                                           51s   service=unique-id-service\nurl-shorten-memcached    ClusterIP   10.96.21.211    <none>        11211/TCP                                                          51s   service=url-shorten-memcached\nurl-shorten-mongodb      ClusterIP   10.96.97.14     <none>        27017/TCP                                                          51s   service=url-shorten-mongodb\nurl-shorten-service      ClusterIP   10.96.26.190    <none>        9090/TCP                                                           51s   service=url-shorten-service\nuser-memcached           ClusterIP   10.96.100.246   <none>        11211/TCP                                                          51s   service=user-memcached\nuser-mention-service     ClusterIP   10.96.86.73     <none>        9090/TCP                                                           51s   service=user-mention-service\nuser-mongodb             ClusterIP   10.96.207.157   <none>        27017/TCP                                                          51s   service=user-mongodb\nuser-service             ClusterIP   10.96.108.161   <none>        9090/TCP                                                           51s   service=user-service\nuser-timeline-mongodb    ClusterIP   10.96.19.231    <none>        27017/TCP                                                          51s   service=user-timeline-mongodb\nuser-timeline-redis      ClusterIP   10.96.46.248    <none>        6379/TCP                                                           51s   service=user-timeline-redis\nuser-timeline-service    ClusterIP   10.96.43.123    <none>        9090/TCP                                                           51s   service=user-timeline-service\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get deployments -n test-social-network -o wide\")",
+      "command": "exec_shell(\"kubectl get deployments -n test-social-network-ad7ce5c3 -o wide\")",
+      "result": "NAME                     READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS               IMAGES                                                         SELECTOR\ncompose-post-service     1/1     1            1           51s   compose-post-service     docker.io/deathstarbench/social-network-microservices:latest   service=compose-post-service\nhome-timeline-redis      1/1     1            1           51s   home-timeline-redis      docker.io/library/redis:6.2.4                                  service=home-timeline-redis\nhome-timeline-service    1/1     1            1           51s   home-timeline-service    docker.io/deathstarbench/social-network-microservices:latest   service=home-timeline-service\njaeger                   1/1     1            1           51s   jaeger                   docker.io/jaegertracing/all-in-one:1.57                        service=jaeger\nmedia-frontend           1/1     1            1           51s   media-frontend           docker.io/yg397/media-frontend:xenial                          service=media-frontend\nmedia-memcached          1/1     1            1           51s   media-memcached          docker.io/library/memcached:1.6.7                              service=media-memcached\nmedia-mongodb            1/1     1            1           51s   media-mongodb            docker.io/library/mongo:4.4.6                                  service=media-mongodb\nmedia-service            1/1     1            1           51s   media-service            docker.io/deathstarbench/social-network-microservices:latest   service=media-service\nnginx-thrift             1/1     1            1           51s   nginx-thrift             docker.io/yg397/openresty-thrift:xenial                        service=nginx-thrift\npost-storage-memcached   1/1     1            1           51s   post-storage-memcached   docker.io/library/memcached:1.6.7                              service=post-storage-memcached\npost-storage-mongodb     1/1     1            1           51s   post-storage-mongodb     docker.io/library/mongo:4.4.6                                  service=post-storage-mongodb\npost-storage-service     1/1     1            1           51s   post-storage-service     docker.io/deathstarbench/social-network-microservices:latest   service=post-storage-service\nsocial-graph-mongodb     1/1     1            1           51s   social-graph-mongodb     docker.io/library/mongo:4.4.6                                  service=social-graph-mongodb\nsocial-graph-redis       1/1     1            1           51s   social-graph-redis       docker.io/library/redis:6.2.4                                  service=social-graph-redis\nsocial-graph-service     1/1     1            1           51s   social-graph-service     docker.io/deathstarbench/social-network-microservices:latest   service=social-graph-service\ntext-service             1/1     1            1           51s   text-service             docker.io/deathstarbench/social-network-microservices:latest   service=text-service\nunique-id-service        1/1     1            1           51s   unique-id-service        docker.io/deathstarbench/social-network-microservices:latest   service=unique-id-service\nurl-shorten-memcached    1/1     1            1           51s   url-shorten-memcached    docker.io/library/memcached:1.6.7                              service=url-shorten-memcached\nurl-shorten-mongodb      1/1     1            1           51s   url-shorten-mongodb      docker.io/library/mongo:4.4.6                                  service=url-shorten-mongodb\nurl-shorten-service      1/1     1            1           51s   url-shorten-service      docker.io/deathstarbench/social-network-microservices:latest   service=url-shorten-service\nuser-memcached           1/1     1            1           51s   user-memcached           docker.io/library/memcached:1.6.7                              service=user-memcached\nuser-mention-service     1/1     1            1           51s   user-mention-service     docker.io/deathstarbench/social-network-microservices:latest   service=user-mention-service\nuser-mongodb             1/1     1            1           51s   user-mongodb             docker.io/library/mongo:4.4.6                                  service=user-mongodb\nuser-service             0/0     0            0           51s   user-service             docker.io/deathstarbench/social-network-microservices:latest   service=user-service\nuser-timeline-mongodb    1/1     1            1           51s   user-timeline-mongodb    docker.io/library/mongo:4.4.6                                  service=user-timeline-mongodb\nuser-timeline-redis      1/1     1            1           51s   user-timeline-redis      docker.io/library/redis:6.2.4                                  service=user-timeline-redis\nuser-timeline-service    1/1     1            1           51s   user-timeline-service    docker.io/deathstarbench/social-network-microservices:latest   service=user-timeline-service\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get deployment user-service -n test-social-network -o yaml\")",
+      "command": "exec_shell(\"kubectl get deployment user-service -n test-social-network-ad7ce5c3 -o yaml\")",
+      "result": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  annotations:\n    deployment.kubernetes.io/revision: \"1\"\n    meta.helm.sh/release-name: social-network\n    meta.helm.sh/release-namespace: test-social-network-ad7ce5c3\n  creationTimestamp: \"2025-12-24T10:10:59Z\"\n  generation: 2\n  labels:\n    app.kubernetes.io/managed-by: Helm\n    service: user-service\n  name: user-service\n  namespace: test-social-network-ad7ce5c3\n  resourceVersion: \"68604\"\n  uid: 955177bd-439d-4a4b-a752-6c5debda0d06\nspec:\n  progressDeadlineSeconds: 600\n  replicas: 0\n  revisionHistoryLimit: 10\n  selector:\n    matchLabels:\n      service: user-service\n  strategy:\n    rollingUpdate:\n      maxSurge: 25%\n      maxUnavailable: 25%\n    type: RollingUpdate\n  template:\n    metadata:\n      creationTimestamp: null\n      labels:\n        app: user-service\n        service: user-service\n    spec:\n      containers:\n      - command:\n        - UserService\n        image: docker.io/deathstarbench/social-network-microservices:latest\n        imagePullPolicy: IfNotPresent\n        name: user-service\n        ports:\n        - containerPort: 9090\n          protocol: TCP\n        resources: {}\n        terminationMessagePath: /dev/termination-log\n        terminationMessagePolicy: File\n        volumeMounts:\n        - mountPath: /social-network-microservices/config/jaeger-config.yml\n          name: user-service-config\n          subPath: jaeger-config.yml\n        - mountPath: /social-network-microservices/config/service-config.json\n          name: user-service-config\n          subPath: service-config.json\n      dnsPolicy: ClusterFirst\n      hostname: user-service\n      restartPolicy: Always\n      schedulerName: default-scheduler\n      securityContext: {}\n      terminationGracePeriodSeconds: 30\n      volumes:\n      - configMap:\n          defaultMode: 420\n          name: user-service\n        name: user-service-config\nstatus:\n  conditions:\n  - lastTransitionTime: \"2025-12-24T10:11:06Z\"\n    lastUpdateTime: \"2025-12-24T10:11:06Z\"\n    message: Deployment has minimum availability.\n    reason: MinimumReplicasAvailable\n    status: \"True\"\n    type: Available\n  - lastTransitionTime: \"2025-12-24T10:11:00Z\"\n    lastUpdateTime: \"2025-12-24T10:11:06Z\"\n    message: ReplicaSet \"user-service-6d5985bd55\" has successfully progressed.\n    reason: NewReplicaSetAvailable\n    status: \"True\"\n    type: Progressing\n  observedGeneration: 2\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl scale deployment user-service -n test-social-network --replicas=1\")",
+      "command": "exec_shell(\"kubectl scale deployment user-service -n test-social-network-ad7ce5c3 --replicas=1\")",
+      "result": "deployment.apps/user-service scaled\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get pods -n test-social-network\")",
+      "command": "exec_shell(\"kubectl get pods -n test-social-network-ad7ce5c3\")",
+      "result": "NAME                                      READY   STATUS              RESTARTS   AGE\ncompose-post-service-64f6c9b656-2wbdx     1/1     Running             0          53s\nhome-timeline-redis-ff9499c5c-m6cb9       1/1     Running             0          51s\nhome-timeline-service-7d787c8dfd-bcc6k    1/1     Running             0          53s\njaeger-7d8548779-7mbz7                    1/1     Running             0          51s\nmedia-frontend-fbcbcd8cd-7rcwq            1/1     Running             0          53s\nmedia-memcached-54b5cffb48-sdpm7          1/1     Running             0          53s\nmedia-mongodb-6d47ccb779-8mq59            1/1     Running             0          53s\nmedia-service-5f6b5dbff8-vxwlw            1/1     Running             0          51s\nnginx-thrift-5b6bf645f-qzrkx              1/1     Running             0          53s\npost-storage-memcached-5b544b79d8-w6pjf   1/1     Running             0          51s\npost-storage-mongodb-846dcb76b7-nms74     1/1     Running             0          52s\npost-storage-service-9bd8bd979-nnqqq      1/1     Running             0          52s\nsocial-graph-mongodb-69ddddf895-l58lf     1/1     Running             0          53s\nsocial-graph-redis-f9759b67d-hsndj        1/1     Running             0          53s\nsocial-graph-service-fcfb99f8f-ftbgl      1/1     Running             0          52s\ntext-service-585f7cbc5f-9c9gp             1/1     Running             0          53s\nunique-id-service-655cc57f6d-kp2j9        1/1     Running             0          51s\nurl-shorten-memcached-999559bdb-lp7m9     1/1     Running             0          53s\nurl-shorten-mongodb-77894f9b76-856zf      1/1     Running             0          52s\nurl-shorten-service-7b4f9d6cfb-xqdxt      1/1     Running             0          53s\nuser-memcached-554fcf9578-952pk           1/1     Running             0          50s\nuser-mention-service-69f4955bbc-qtwzf     1/1     Running             0          52s\nuser-mongodb-75847cfbb-tlhnv              1/1     Running             0          52s\nuser-service-6d5985bd55-mwppv             0/1     ContainerCreating   0          0s\nuser-timeline-mongodb-658f54fd68-j2hx9    1/1     Running             0          50s\nuser-timeline-redis-cbd5f6645-p6qx8       1/1     Running             0          50s\nuser-timeline-service-6c79dd65d6-h85xs    1/1     Running             0          53s\nwrk2-job-ad7ce5c3-6qjv7                   1/1     Running             0          9s\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get pods -n test-social-network -o wide\")",
+      "command": "exec_shell(\"kubectl get pods -n test-social-network-ad7ce5c3 -o wide\")",
+      "result": "NAME                                      READY   STATUS              RESTARTS   AGE   IP             NODE          NOMINATED NODE   READINESS GATES\ncompose-post-service-64f6c9b656-2wbdx     1/1     Running             0          54s   10.244.1.81    kind-worker   <none>           <none>\nhome-timeline-redis-ff9499c5c-m6cb9       1/1     Running             0          52s   10.244.1.98    kind-worker   <none>           <none>\nhome-timeline-service-7d787c8dfd-bcc6k    1/1     Running             0          54s   10.244.1.89    kind-worker   <none>           <none>\njaeger-7d8548779-7mbz7                    1/1     Running             0          52s   10.244.1.102   kind-worker   <none>           <none>\nmedia-frontend-fbcbcd8cd-7rcwq            1/1     Running             0          54s   10.244.1.86    kind-worker   <none>           <none>\nmedia-memcached-54b5cffb48-sdpm7          1/1     Running             0          54s   10.244.1.90    kind-worker   <none>           <none>\nmedia-mongodb-6d47ccb779-8mq59            1/1     Running             0          54s   10.244.1.79    kind-worker   <none>           <none>\nmedia-service-5f6b5dbff8-vxwlw            1/1     Running             0          52s   10.244.1.100   kind-worker   <none>           <none>\nnginx-thrift-5b6bf645f-qzrkx              1/1     Running             0          54s   10.244.1.87    kind-worker   <none>           <none>\npost-storage-memcached-5b544b79d8-w6pjf   1/1     Running             0          52s   10.244.1.101   kind-worker   <none>           <none>\npost-storage-mongodb-846dcb76b7-nms74     1/1     Running             0          53s   10.244.1.92    kind-worker   <none>           <none>\npost-storage-service-9bd8bd979-nnqqq      1/1     Running             0          53s   10.244.1.97    kind-worker   <none>           <none>\nsocial-graph-mongodb-69ddddf895-l58lf     1/1     Running             0          54s   10.244.1.82    kind-worker   <none>           <none>\nsocial-graph-redis-f9759b67d-hsndj        1/1     Running             0          54s   10.244.1.80    kind-worker   <none>           <none>\nsocial-graph-service-fcfb99f8f-ftbgl      1/1     Running             0          53s   10.244.1.94    kind-worker   <none>           <none>\ntext-service-585f7cbc5f-9c9gp             1/1     Running             0          54s   10.244.1.84    kind-worker   <none>           <none>\nunique-id-service-655cc57f6d-kp2j9        1/1     Running             0          52s   10.244.1.99    kind-worker   <none>           <none>\nurl-shorten-memcached-999559bdb-lp7m9     1/1     Running             0          54s   10.244.1.88    kind-worker   <none>           <none>\nurl-shorten-mongodb-77894f9b76-856zf      1/1     Running             0          53s   10.244.1.93    kind-worker   <none>           <none>\nurl-shorten-service-7b4f9d6cfb-xqdxt      1/1     Running             0          54s   10.244.1.83    kind-worker   <none>           <none>\nuser-memcached-554fcf9578-952pk           1/1     Running             0          51s   10.244.1.105   kind-worker   <none>           <none>\nuser-mention-service-69f4955bbc-qtwzf     1/1     Running             0          53s   10.244.1.91    kind-worker   <none>           <none>\nuser-mongodb-75847cfbb-tlhnv              1/1     Running             0          53s   10.244.1.96    kind-worker   <none>           <none>\nuser-service-6d5985bd55-mwppv             0/1     ContainerCreating   0          1s    <none>         kind-worker   <none>           <none>\nuser-timeline-mongodb-658f54fd68-j2hx9    1/1     Running             0          51s   10.244.1.104   kind-worker   <none>           <none>\nuser-timeline-redis-cbd5f6645-p6qx8       1/1     Running             0          51s   10.244.1.103   kind-worker   <none>           <none>\nuser-timeline-service-6c79dd65d6-h85xs    1/1     Running             0          54s   10.244.1.85    kind-worker   <none>           <none>\nwrk2-job-ad7ce5c3-6qjv7                   1/1     Running             0          10s   10.244.1.106   kind-worker   <none>           <none>\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get deployments -n test-social-network\")",
+      "command": "exec_shell(\"kubectl get deployments -n test-social-network-ad7ce5c3\")",
+      "result": "NAME                     READY   UP-TO-DATE   AVAILABLE   AGE\ncompose-post-service     1/1     1            1           55s\nhome-timeline-redis      1/1     1            1           55s\nhome-timeline-service    1/1     1            1           55s\njaeger                   1/1     1            1           55s\nmedia-frontend           1/1     1            1           55s\nmedia-memcached          1/1     1            1           55s\nmedia-mongodb            1/1     1            1           55s\nmedia-service            1/1     1            1           55s\nnginx-thrift             1/1     1            1           55s\npost-storage-memcached   1/1     1            1           55s\npost-storage-mongodb     1/1     1            1           55s\npost-storage-service     1/1     1            1           55s\nsocial-graph-mongodb     1/1     1            1           55s\nsocial-graph-redis       1/1     1            1           55s\nsocial-graph-service     1/1     1            1           55s\ntext-service             1/1     1            1           55s\nunique-id-service        1/1     1            1           55s\nurl-shorten-memcached    1/1     1            1           55s\nurl-shorten-mongodb      1/1     1            1           55s\nurl-shorten-service      1/1     1            1           55s\nuser-memcached           1/1     1            1           55s\nuser-mention-service     1/1     1            1           55s\nuser-mongodb             1/1     1            1           55s\nuser-service             1/1     1            1           55s\nuser-timeline-mongodb    1/1     1            1           55s\nuser-timeline-redis      1/1     1            1           55s\nuser-timeline-service    1/1     1            1           55s\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get deployment user-service -n test-social-network\")",
+      "command": "exec_shell(\"kubectl get deployment user-service -n test-social-network-ad7ce5c3\")",
+      "result": "NAME           READY   UP-TO-DATE   AVAILABLE   AGE\nuser-service   1/1     1            1           56s\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get deployment user-service -n test-social-network -o json | jq '.spec.replicas'\")",
+      "command": "exec_shell(\"kubectl get deployment user-service -n test-social-network-ad7ce5c3 -o json | jq '.spec.replicas'\")",
+      "result": "/bin/sh: 1: jq: not found\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl describe deployment user-service -n test-social-network\")",
+      "command": "exec_shell(\"kubectl describe deployment user-service -n test-social-network-ad7ce5c3\")",
+      "result": "Name:                   user-service\nNamespace:              test-social-network-ad7ce5c3\nCreationTimestamp:      Wed, 24 Dec 2025 18:10:59 +0800\nLabels:                 app.kubernetes.io/managed-by=Helm\n                        service=user-service\nAnnotations:            deployment.kubernetes.io/revision: 1\n                        meta.helm.sh/release-name: social-network\n                        meta.helm.sh/release-namespace: test-social-network-ad7ce5c3\nSelector:               service=user-service\nReplicas:               1 desired | 1 updated | 1 total | 1 available | 0 unavailable\nStrategyType:           RollingUpdate\nMinReadySeconds:        0\nRollingUpdateStrategy:  25% max unavailable, 25% max surge\nPod Template:\n  Labels:  app=user-service\n           service=user-service\n  Containers:\n   user-service:\n    Image:      docker.io/deathstarbench/social-network-microservices:latest\n    Port:       9090/TCP\n    Host Port:  0/TCP\n    Command:\n      UserService\n    Environment:  <none>\n    Mounts:\n      /social-network-microservices/config/jaeger-config.yml from user-service-config (rw,path=\"jaeger-config.yml\")\n      /social-network-microservices/config/service-config.json from user-service-config (rw,path=\"service-config.json\")\n  Volumes:\n   user-service-config:\n    Type:          ConfigMap (a volume populated by a ConfigMap)\n    Name:          user-service\n    Optional:      false\n  Node-Selectors:  <none>\n  Tolerations:     <none>\nConditions:\n  Type           Status  Reason\n  ----           ------  ------\n  Progressing    True    NewReplicaSetAvailable\n  Available      True    MinimumReplicasAvailable\nOldReplicaSets:  <none>\nNewReplicaSet:   user-service-6d5985bd55 (1/1 replicas created)\nEvents:\n  Type    Reason             Age               From                   Message\n  ----    ------             ----              ----                   -------\n  Normal  ScalingReplicaSet  48s               deployment-controller  Scaled down replica set user-service-6d5985bd55 from 1 to 0\n  Normal  ScalingReplicaSet  4s (x2 over 56s)  deployment-controller  Scaled up replica set user-service-6d5985bd55 from 0 to 1\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get replicaset -n test-social-network -l service=user-service\")",
+      "command": "exec_shell(\"kubectl get replicaset -n test-social-network-ad7ce5c3 -l service=user-service\")",
+      "result": "NAME                      DESIRED   CURRENT   READY   AGE\nuser-service-6d5985bd55   1         1         1       57s\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get pods -n test-social-network -l service=user-service\")",
+      "command": "exec_shell(\"kubectl get pods -n test-social-network-ad7ce5c3 -l service=user-service\")",
+      "result": "NAME                            READY   STATUS    RESTARTS   AGE\nuser-service-6d5985bd55-mwppv   1/1     Running   0          6s\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get pods -n test-social-network -l service=user-service -o wide\")",
+      "command": "exec_shell(\"kubectl get pods -n test-social-network-ad7ce5c3 -l service=user-service -o wide\")",
+      "result": "NAME                            READY   STATUS    RESTARTS   AGE   IP             NODE          NOMINATED NODE   READINESS GATES\nuser-service-6d5985bd55-mwppv   1/1     Running   0          7s    10.244.1.107   kind-worker   <none>           <none>\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl rollout status deployment/user-service -n test-social-network\")",
+      "command": "exec_shell(\"kubectl rollout status deployment/user-service -n test-social-network-ad7ce5c3\")",
+      "result": "deployment \"user-service\" successfully rolled out\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get events -n test-social-network --sort-by='.lastTimestamp' | tail -20\")",
+      "command": "exec_shell(\"kubectl get events -n test-social-network-ad7ce5c3 --sort-by='.lastTimestamp' | tail -20\")",
+      "result": "54s         Normal   Created             pod/unique-id-service-655cc57f6d-kp2j9         Created container: unique-id-service\n54s         Normal   Pulled              pod/unique-id-service-655cc57f6d-kp2j9         Container image \"docker.io/deathstarbench/social-network-microservices:latest\" already present on machine\n54s         Normal   Started             pod/social-graph-service-fcfb99f8f-ftbgl       Started container social-graph-service\n54s         Normal   Pulled              pod/user-timeline-redis-cbd5f6645-p6qx8        Container image \"docker.io/library/redis:6.2.4\" already present on machine\n53s         Normal   Started             pod/user-memcached-554fcf9578-952pk            Started container user-memcached\n52s         Normal   SuccessfulDelete    replicaset/user-service-6d5985bd55             Deleted pod: user-service-6d5985bd55-tcqrr\n52s         Normal   ScalingReplicaSet   deployment/user-service                        Scaled down replica set user-service-6d5985bd55 from 1 to 0\n52s         Normal   Killing             pod/user-service-6d5985bd55-tcqrr              Stopping container user-service\n17s         Normal   Created             pod/wrk2-job-ad7ce5c3-6qjv7                    Created container: wrk2\n17s         Normal   Scheduled           pod/wrk2-job-ad7ce5c3-6qjv7                    Successfully assigned test-social-network-ad7ce5c3/wrk2-job-ad7ce5c3-6qjv7 to kind-worker\n17s         Normal   Pulled              pod/wrk2-job-ad7ce5c3-6qjv7                    Container image \"deathstarbench/wrk2-client:latest\" already present on machine\n17s         Normal   SuccessfulCreate    job/wrk2-job-ad7ce5c3                          Created pod: wrk2-job-ad7ce5c3-6qjv7\n16s         Normal   Started             pod/wrk2-job-ad7ce5c3-6qjv7                    Started container wrk2\n8s          Normal   SuccessfulCreate    replicaset/user-service-6d5985bd55             Created pod: user-service-6d5985bd55-mwppv\n8s          Normal   Created             pod/user-service-6d5985bd55-mwppv              Created container: user-service\n8s          Normal   Pulled              pod/user-service-6d5985bd55-mwppv              Container image \"docker.io/deathstarbench/social-network-microservices:latest\" already present on machine\n8s          Normal   Scheduled           pod/user-service-6d5985bd55-mwppv              Successfully assigned test-social-network-ad7ce5c3/user-service-6d5985bd55-mwppv to kind-worker\n8s          Normal   ScalingReplicaSet   deployment/user-service                        Scaled up replica set user-service-6d5985bd55 from 0 to 1\n7s          Normal   Started             pod/user-service-6d5985bd55-mwppv              Started container user-service\n4s          Normal   Completed           job/wrk2-job-ad7ce5c3                          Job completed\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get events -n test-social-network --field-selector involvedObject.name=user-service\")",
+      "command": "exec_shell(\"kubectl get events -n test-social-network-ad7ce5c3 --field-selector involvedObject.name=user-service\")",
+      "result": "LAST SEEN   TYPE     REASON              OBJECT                    MESSAGE\n9s          Normal   ScalingReplicaSet   deployment/user-service   Scaled up replica set user-service-6d5985bd55 from 0 to 1\n53s         Normal   ScalingReplicaSet   deployment/user-service   Scaled down replica set user-service-6d5985bd55 from 1 to 0\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl logs -n test-social-network -l service=user-service --tail=50\")",
+      "command": "exec_shell(\"kubectl logs -n test-social-network-ad7ce5c3 -l service=user-service --tail=50\")",
+      "result": "[2025-Dec-24 10:11:53.016793] <info>: (UserHandler.h:932:GetMachineId) MAC address = 3e:cd:09:50:e6:db\n[2025-Dec-24 10:11:53.016899] <info>: (UserService.cpp:63:main) machine_id = 66c\n[2025-Dec-24 10:11:53.019246] <info>: (UserService.cpp:94:main) Starting the user-service server ...\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get endpoints user-service -n test-social-network\")",
+      "command": "exec_shell(\"kubectl get endpoints user-service -n test-social-network-ad7ce5c3\")",
+      "result": "NAME           ENDPOINTS           AGE\nuser-service   10.244.1.107:9090   65s\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl describe service user-service -n test-social-network\")",
+      "command": "exec_shell(\"kubectl describe service user-service -n test-social-network-ad7ce5c3\")",
+      "result": "Name:                     user-service\nNamespace:                test-social-network-ad7ce5c3\nLabels:                   app.kubernetes.io/managed-by=Helm\nAnnotations:              meta.helm.sh/release-name: social-network\n                          meta.helm.sh/release-namespace: test-social-network-ad7ce5c3\nSelector:                 service=user-service\nType:                     ClusterIP\nIP Family Policy:         SingleStack\nIP Families:              IPv4\nIP:                       10.96.108.161\nIPs:                      10.96.108.161\nPort:                     9090  9090/TCP\nTargetPort:               9090/TCP\nEndpoints:                10.244.1.107:9090\nSession Affinity:         None\nInternal Traffic Policy:  Cluster\nEvents:                   <none>\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get all -n test-social-network\")",
+      "command": "exec_shell(\"kubectl get all -n test-social-network-ad7ce5c3\")",
+      "result": "NAME                                          READY   STATUS      RESTARTS   AGE\npod/compose-post-service-64f6c9b656-2wbdx     1/1     Running     0          65s\npod/home-timeline-redis-ff9499c5c-m6cb9       1/1     Running     0          63s\npod/home-timeline-service-7d787c8dfd-bcc6k    1/1     Running     0          65s\npod/jaeger-7d8548779-7mbz7                    1/1     Running     0          63s\npod/media-frontend-fbcbcd8cd-7rcwq            1/1     Running     0          65s\npod/media-memcached-54b5cffb48-sdpm7          1/1     Running     0          65s\npod/media-mongodb-6d47ccb779-8mq59            1/1     Running     0          65s\npod/media-service-5f6b5dbff8-vxwlw            1/1     Running     0          63s\npod/nginx-thrift-5b6bf645f-qzrkx              1/1     Running     0          65s\npod/post-storage-memcached-5b544b79d8-w6pjf   1/1     Running     0          63s\npod/post-storage-mongodb-846dcb76b7-nms74     1/1     Running     0          64s\npod/post-storage-service-9bd8bd979-nnqqq      1/1     Running     0          64s\npod/social-graph-mongodb-69ddddf895-l58lf     1/1     Running     0          65s\npod/social-graph-redis-f9759b67d-hsndj        1/1     Running     0          65s\npod/social-graph-service-fcfb99f8f-ftbgl      1/1     Running     0          64s\npod/text-service-585f7cbc5f-9c9gp             1/1     Running     0          65s\npod/unique-id-service-655cc57f6d-kp2j9        1/1     Running     0          63s\npod/url-shorten-memcached-999559bdb-lp7m9     1/1     Running     0          65s\npod/url-shorten-mongodb-77894f9b76-856zf      1/1     Running     0          64s\npod/url-shorten-service-7b4f9d6cfb-xqdxt      1/1     Running     0          65s\npod/user-memcached-554fcf9578-952pk           1/1     Running     0          62s\npod/user-mention-service-69f4955bbc-qtwzf     1/1     Running     0          64s\npod/user-mongodb-75847cfbb-tlhnv              1/1     Running     0          64s\npod/user-service-6d5985bd55-mwppv             1/1     Running     0          12s\npod/user-timeline-mongodb-658f54fd68-j2hx9    1/1     Running     0          62s\npod/user-timeline-redis-cbd5f6645-p6qx8       1/1     Running     0          62s\npod/user-timeline-service-6c79dd65d6-h85xs    1/1     Running     0          65s\npod/wrk2-job-ad7ce5c3-6qjv7                   0/1     Completed   0          21s\n\nNAME                             TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                                                            AGE\nservice/compose-post-service     ClusterIP   10.96.88.117    <none>        9090/TCP                                                           66s\nservice/home-timeline-redis      ClusterIP   10.96.232.51    <none>        6379/TCP                                                           66s\nservice/home-timeline-service    ClusterIP   10.96.142.15    <none>        9090/TCP                                                           66s\nservice/jaeger                   ClusterIP   10.96.148.54    <none>        5775/UDP,6831/UDP,6832/UDP,5778/TCP,16686/TCP,14268/TCP,9411/TCP   66s\nservice/media-frontend           ClusterIP   10.96.221.179   <none>        8081/TCP                                                           66s\nservice/media-memcached          ClusterIP   10.96.10.206    <none>        11211/TCP                                                          66s\nservice/media-mongodb            ClusterIP   10.96.165.188   <none>        27017/TCP                                                          66s\nservice/media-service            ClusterIP   10.96.182.181   <none>        9090/TCP                                                           66s\nservice/nginx-thrift             ClusterIP   10.96.70.121    <none>        8080/TCP                                                           66s\nservice/post-storage-memcached   ClusterIP   10.96.10.190    <none>        11211/TCP                                                          66s\nservice/post-storage-mongodb     ClusterIP   10.96.251.43    <none>        27017/TCP                                                          66s\nservice/post-storage-service     ClusterIP   10.96.88.203    <none>        9090/TCP                                                           66s\nservice/social-graph-mongodb     ClusterIP   10.96.1.188     <none>        27017/TCP                                                          66s\nservice/social-graph-redis       ClusterIP   10.96.142.107   <none>        6379/TCP                                                           66s\nservice/social-graph-service     ClusterIP   10.96.75.85     <none>        9090/TCP                                                           66s\nservice/text-service             ClusterIP   10.96.49.107    <none>        9090/TCP                                                           66s\nservice/unique-id-service        ClusterIP   10.96.138.93    <none>        9090/TCP                                                           66s\nservice/url-shorten-memcached    ClusterIP   10.96.21.211    <none>        11211/TCP                                                          66s\nservice/url-shorten-mongodb      ClusterIP   10.96.97.14     <none>        27017/TCP                                                          66s\nservice/url-shorten-service      ClusterIP   10.96.26.190    <none>        9090/TCP                                                           66s\nservice/user-memcached           ClusterIP   10.96.100.246   <none>        11211/TCP                                                          66s\nservice/user-mention-service     ClusterIP   10.96.86.73     <none>        9090/TCP                                                           66s\nservice/user-mongodb             ClusterIP   10.96.207.157   <none>        27017/TCP                                                          66s\nservice/user-service             ClusterIP   10.96.108.161   <none>        9090/TCP                                                           66s\nservice/user-timeline-mongodb    ClusterIP   10.96.19.231    <none>        27017/TCP                                                          66s\nservice/user-timeline-redis      ClusterIP   10.96.46.248    <none>        6379/TCP                                                           66s\nservice/user-timeline-service    ClusterIP   10.96.43.123    <none>        9090/TCP                                                           66s\n\nNAME                                     READY   UP-TO-DATE   AVAILABLE   AGE\ndeployment.apps/compose-post-service     1/1     1            1           65s\ndeployment.apps/home-timeline-redis      1/1     1            1           65s\ndeployment.apps/home-timeline-service    1/1     1            1           65s\ndeployment.apps/jaeger                   1/1     1            1           65s\ndeployment.apps/media-frontend           1/1     1            1           65s\ndeployment.apps/media-memcached          1/1     1            1           65s\ndeployment.apps/media-mongodb            1/1     1            1           65s\ndeployment.apps/media-service            1/1     1            1           65s\ndeployment.apps/nginx-thrift             1/1     1            1           65s\ndeployment.apps/post-storage-memcached   1/1     1            1           65s\ndeployment.apps/post-storage-mongodb     1/1     1            1           65s\ndeployment.apps/post-storage-service     1/1     1            1           65s\ndeployment.apps/social-graph-mongodb     1/1     1            1           65s\ndeployment.apps/social-graph-redis       1/1     1            1           65s\ndeployment.apps/social-graph-service     1/1     1            1           65s\ndeployment.apps/text-service             1/1     1            1           65s\ndeployment.apps/unique-id-service        1/1     1            1           65s\ndeployment.apps/url-shorten-memcached    1/1     1            1           65s\ndeployment.apps/url-shorten-mongodb      1/1     1            1           65s\ndeployment.apps/url-shorten-service      1/1     1            1           65s\ndeployment.apps/user-memcached           1/1     1            1           65s\ndeployment.apps/user-mention-service     1/1     1            1           65s\ndeployment.apps/user-mongodb             1/1     1            1           65s\ndeployment.apps/user-service             1/1     1            1           65s\ndeployment.apps/user-timeline-mongodb    1/1     1            1           65s\ndeployment.apps/user-timeline-redis      1/1     1            1           65s\ndeployment.apps/user-timeline-service    1/1     1            1           65s\n\nNAME                                                DESIRED   CURRENT   READY   AGE\nreplicaset.apps/compose-post-service-64f6c9b656     1         1         1       65s\nreplicaset.apps/home-timeline-redis-ff9499c5c       1         1         1       64s\nreplicaset.apps/home-timeline-service-7d787c8dfd    1         1         1       65s\nreplicaset.apps/jaeger-7d8548779                    1         1         1       63s\nreplicaset.apps/media-frontend-fbcbcd8cd            1         1         1       65s\nreplicaset.apps/media-memcached-54b5cffb48          1         1         1       65s\nreplicaset.apps/media-mongodb-6d47ccb779            1         1         1       65s\nreplicaset.apps/media-service-5f6b5dbff8            1         1         1       63s\nreplicaset.apps/nginx-thrift-5b6bf645f              1         1         1       65s\nreplicaset.apps/post-storage-memcached-5b544b79d8   1         1         1       63s\nreplicaset.apps/post-storage-mongodb-846dcb76b7     1         1         1       65s\nreplicaset.apps/post-storage-service-9bd8bd979      1         1         1       64s\nreplicaset.apps/social-graph-mongodb-69ddddf895     1         1         1       65s\nreplicaset.apps/social-graph-redis-f9759b67d        1         1         1       65s\nreplicaset.apps/social-graph-service-fcfb99f8f      1         1         1       64s\nreplicaset.apps/text-service-585f7cbc5f             1         1         1       65s\nreplicaset.apps/unique-id-service-655cc57f6d        1         1         1       63s\nreplicaset.apps/url-shorten-memcached-999559bdb     1         1         1       65s\nreplicaset.apps/url-shorten-mongodb-77894f9b76      1         1         1       65s\nreplicaset.apps/url-shorten-service-7b4f9d6cfb      1         1         1       65s\nreplicaset.apps/user-memcached-554fcf9578           1         1         1       62s\nreplicaset.apps/user-mention-service-69f4955bbc     1         1         1       65s\nreplicaset.apps/user-mongodb-75847cfbb              1         1         1       64s\nreplicaset.apps/user-service-6d5985bd55             1         1         1       64s\nreplicaset.apps/user-timeline-mongodb-658f54fd68    1         1         1       63s\nreplicaset.apps/user-timeline-redis-cbd5f6645       1         1         1       63s\nreplicaset.apps/user-timeline-service-6c79dd65d6    1         1         1       65s\n\nNAME                          STATUS     COMPLETIONS   DURATION   AGE\njob.batch/wrk2-job-ad7ce5c3   Complete   1/1           13s        21s\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get namespaces\")",
+      "command": "exec_shell(\"kubectl get namespaces\")",
+      "result": "NAME                           STATUS   AGE\nchaos-mesh                     Active   36m\ndefault                        Active   111m\nkube-node-lease                Active   111m\nkube-public                    Active   111m\nkube-system                    Active   111m\nlocal-path-storage             Active   111m\nobserve                        Active   108m\nopenebs                        Active   108m\ntest-social-network-ad7ce5c3   Active   69s\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get nodes -o wide\")",
+      "command": "exec_shell(\"kubectl get nodes -o wide\")",
+      "result": "NAME                 STATUS   ROLES           AGE    VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION                     CONTAINER-RUNTIME\nkind-control-plane   Ready    control-plane   111m   v1.32.0   172.18.0.3    <none>        Debian GNU/Linux 12 (bookworm)   6.6.87.2-microsoft-standard-WSL2   containerd://1.7.24\nkind-worker          Ready    <none>          111m   v1.32.0   172.18.0.2    <none>        Debian GNU/Linux 12 (bookworm)   6.6.87.2-microsoft-standard-WSL2   containerd://1.7.24\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl top nodes\")",
+      "command": "exec_shell(\"kubectl top nodes\")",
+      "result": "error: Metrics API not available\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl top pods -n test-social-network\")",
+      "command": "exec_shell(\"kubectl top pods -n test-social-network-ad7ce5c3\")",
+      "result": "error: Metrics API not available\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get deployment user-service -n test-social-network -o jsonpath='{.status}'\")",
+      "command": "exec_shell(\"kubectl get deployment user-service -n test-social-network-ad7ce5c3 -o jsonpath='{.status}'\")",
+      "result": "{\"availableReplicas\":1,\"conditions\":[{\"lastTransitionTime\":\"2025-12-24T10:11:00Z\",\"lastUpdateTime\":\"2025-12-24T10:11:06Z\",\"message\":\"ReplicaSet \\\"user-service-6d5985bd55\\\" has successfully progressed.\",\"reason\":\"NewReplicaSetAvailable\",\"status\":\"True\",\"type\":\"Progressing\"},{\"lastTransitionTime\":\"2025-12-24T10:11:53Z\",\"lastUpdateTime\":\"2025-12-24T10:11:53Z\",\"message\":\"Deployment has minimum availability.\",\"reason\":\"MinimumReplicasAvailable\",\"status\":\"True\",\"type\":\"Available\"}],\"observedGeneration\":3,\"readyReplicas\":1,\"replicas\":1,\"updatedReplicas\":1}",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get deployment user-service -n test-social-network -o jsonpath='{.status.replicas}'\")",
+      "command": "exec_shell(\"kubectl get deployment user-service -n test-social-network-ad7ce5c3 -o jsonpath='{.status.replicas}'\")",
+      "result": "1",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get deployment user-service -n test-social-network -o jsonpath='{.status.availableReplicas}'\")",
+      "command": "exec_shell(\"kubectl get deployment user-service -n test-social-network-ad7ce5c3 -o jsonpath='{.status.availableReplicas}'\")",
+      "result": "1",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get deployment user-service -n test-social-network -o jsonpath='{.status.readyReplicas}'\")",
+      "command": "exec_shell(\"kubectl get deployment user-service -n test-social-network-ad7ce5c3 -o jsonpath='{.status.readyReplicas}'\")",
+      "result": "1",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get pods -n test-social-network -l service=user-service -o jsonpath='{.items[*].status.phase}'\")",
+      "command": "exec_shell(\"kubectl get pods -n test-social-network-ad7ce5c3 -l service=user-service -o jsonpath='{.items[*].status.phase}'\")",
+      "result": "Running",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get pods -n test-social-network -l service=user-service -o jsonpath='{.items[*].metadata.name}'\")",
+      "command": "exec_shell(\"kubectl get pods -n test-social-network-ad7ce5c3 -l service=user-service -o jsonpath='{.items[*].metadata.name}'\")",
+      "result": "user-service-6d5985bd55-mwppv",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl describe pod -n test-social-network -l service=user-service\")",
+      "command": "exec_shell(\"kubectl describe pod -n test-social-network-ad7ce5c3 -l service=user-service\")",
+      "result": "Name:             user-service-6d5985bd55-mwppv\nNamespace:        test-social-network-ad7ce5c3\nPriority:         0\nService Account:  default\nNode:             kind-worker/172.18.0.2\nStart Time:       Wed, 24 Dec 2025 18:11:52 +0800\nLabels:           app=user-service\n                  pod-template-hash=6d5985bd55\n                  service=user-service\nAnnotations:      <none>\nStatus:           Running\nIP:               10.244.1.107\nIPs:\n  IP:           10.244.1.107\nControlled By:  ReplicaSet/user-service-6d5985bd55\nContainers:\n  user-service:\n    Container ID:  containerd://ea72296db322a9ee2d026e4d3d2ca8c0d28d4dda4831d63da9def9ac2ffefe93\n    Image:         docker.io/deathstarbench/social-network-microservices:latest\n    Image ID:      docker.io/library/import-2025-12-24@sha256:a659cd8dcedf0fbbbae8c3cdf9c5fb5201dcfc15f1c12fbc565995478d5471d2\n    Port:          9090/TCP\n    Host Port:     0/TCP\n    Command:\n      UserService\n    State:          Running\n      Started:      Wed, 24 Dec 2025 18:11:53 +0800\n    Ready:          True\n    Restart Count:  0\n    Environment:    <none>\n    Mounts:\n      /social-network-microservices/config/jaeger-config.yml from user-service-config (rw,path=\"jaeger-config.yml\")\n      /social-network-microservices/config/service-config.json from user-service-config (rw,path=\"service-config.json\")\n      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-ph2zr (ro)\nConditions:\n  Type                        Status\n  PodReadyToStartContainers   True \n  Initialized                 True \n  Ready                       True \n  ContainersReady             True \n  PodScheduled                True \nVolumes:\n  user-service-config:\n    Type:      ConfigMap (a volume populated by a ConfigMap)\n    Name:      user-service\n    Optional:  false\n  kube-api-access-ph2zr:\n    Type:                    Projected (a volume that contains injected data from multiple sources)\n    TokenExpirationSeconds:  3607\n    ConfigMapName:           kube-root-ca.crt\n    Optional:                false\n    DownwardAPI:             true\nQoS Class:                   BestEffort\nNode-Selectors:              <none>\nTolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s\n                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s\nEvents:\n  Type    Reason     Age   From               Message\n  ----    ------     ----  ----               -------\n  Normal  Scheduled  19s   default-scheduler  Successfully assigned test-social-network-ad7ce5c3/user-service-6d5985bd55-mwppv to kind-worker\n  Normal  Pulled     19s   kubelet            Container image \"docker.io/deathstarbench/social-network-microservices:latest\" already present on machine\n  Normal  Created    19s   kubelet            Created container: user-service\n  Normal  Started    18s   kubelet            Started container user-service\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get events -n test-social-network --field-selector type=Warning\")",
+      "command": "exec_shell(\"kubectl get events -n test-social-network-ad7ce5c3 --field-selector type=Warning\")",
+      "result": "No resources found in test-social-network-ad7ce5c3 namespace.\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get events -n test-social-network -o json | jq '.items[] | select(.reason == \\\"ScalingReplicaSet\\\") | {time: .lastTimestamp, object: .involvedObject.name, message: .message}'\")",
+      "command": "exec_shell(\"kubectl get events -n test-social-network-ad7ce5c3 -o json | jq '.items[] | select(.reason == \\\"ScalingReplicaSet\\\") | {time: .lastTimestamp, object: .involvedObject.name, message: .message}'\")",
+      "result": "/bin/sh: 1: jq: not found\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl rollout history deployment/user-service -n test-social-network\")",
+      "command": "exec_shell(\"kubectl rollout history deployment/user-service -n test-social-network-ad7ce5c3\")",
+      "result": "deployment.apps/user-service \nREVISION  CHANGE-CAUSE\n1         <none>\n\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get hpa -n test-social-network\")",
+      "command": "exec_shell(\"kubectl get hpa -n test-social-network-ad7ce5c3\")",
+      "result": "No resources found in test-social-network-ad7ce5c3 namespace.\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get pdb -n test-social-network\")",
+      "command": "exec_shell(\"kubectl get pdb -n test-social-network-ad7ce5c3\")",
+      "result": "No resources found in test-social-network-ad7ce5c3 namespace.\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get configmap -n test-social-network\")",
+      "command": "exec_shell(\"kubectl get configmap -n test-social-network-ad7ce5c3\")",
+      "result": "NAME                           DATA   AGE\ncompose-post-service           2      78s\nhome-timeline-redis            1      78s\nhome-timeline-service          2      78s\njaeger                         2      78s\nkube-root-ca.crt               1      80s\nmedia-frontend                 3      78s\nmedia-memcached                2      78s\nmedia-mongodb                  1      78s\nmedia-service                  2      78s\nnginx-thrift                   2      78s\npost-storage-memcached         2      78s\npost-storage-mongodb           1      78s\npost-storage-service           2      78s\nsocial-graph-mongodb           1      78s\nsocial-graph-redis             1      78s\nsocial-graph-service           2      78s\ntext-service                   2      78s\nunique-id-service              2      78s\nurl-shorten-memcached          2      78s\nurl-shorten-mongodb            1      78s\nurl-shorten-service            2      78s\nuser-memcached                 2      78s\nuser-mention-service           2      78s\nuser-mongodb                   1      78s\nuser-service                   2      78s\nuser-timeline-mongodb          1      78s\nuser-timeline-redis            1      78s\nuser-timeline-service          2      78s\nwrk2-payload-script-ad7ce5c3   1      33s\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get secrets -n test-social-network\")",
+      "command": "exec_shell(\"kubectl get secrets -n test-social-network-ad7ce5c3\")",
+      "result": "NAME                                   TYPE                 DATA   AGE\nmongodb-tls                            Opaque               2      81s\nsh.helm.release.v1.social-network.v1   helm.sh/release.v1   1      79s\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl logs -n test-social-network -l service=compose-post-service --tail=50 | grep -i 'user-service'\")",
+      "command": "exec_shell(\"kubectl logs -n test-social-network-ad7ce5c3 -l service=compose-post-service --tail=50 | grep -i 'user-service'\")",
+      "result": "Thrift: Wed Dec 24 10:11:45 2025 TSocket::open() connect() <Host: user-service Port: 9090>: Connection refused\n[2025-Dec-24 10:11:45.172663] <error>: (ClientPool.h:114:Pop) Failed to connect user-service-client\nThrift: Wed Dec 24 10:11:45 2025 TSocket::open() connect() <Host: user-service Port: 9090>: Connection refused\n[2025-Dec-24 10:11:45.332295] <error>: (ClientPool.h:114:Pop) Failed to connect user-service-client\nThrift: Wed Dec 24 10:11:46 2025 TSocket::open() connect() <Host: user-service Port: 9090>: Connection refused\n[2025-Dec-24 10:11:46.196137] <error>: (ClientPool.h:114:Pop) Failed to connect user-service-client\nThrift: Wed Dec 24 10:11:47 2025 TSocket::open() connect() <Host: user-service Port: 9090>: Connection refused\n[2025-Dec-24 10:11:47.224288] <error>: (ClientPool.h:114:Pop) Failed to connect user-service-client\nThrift: Wed Dec 24 10:11:48 2025 TSocket::open() connect() <Host: user-service Port: 9090>: Connection refused\n[2025-Dec-24 10:11:48.248128] <error>: (ClientPool.h:114:Pop) Failed to connect user-service-client\nThrift: Wed Dec 24 10:11:49 2025 TSocket::open() connect() <Host: user-service Port: 9090>: Connection refused\n[2025-Dec-24 10:11:49.268432] <error>: (ClientPool.h:114:Pop) Failed to connect user-service-client\nThrift: Wed Dec 24 10:11:50 2025 TSocket::open() connect() <Host: user-service Port: 9090>: Connection refused\n[2025-Dec-24 10:11:50.292294] <error>: (ClientPool.h:114:Pop) Failed to connect user-service-client\nThrift: Wed Dec 24 10:11:51 2025 TSocket::open() connect() <Host: user-service Port: 9090>: Connection refused\n[2025-Dec-24 10:11:51.320186] <error>: (ClientPool.h:114:Pop) Failed to connect user-service-client\nThrift: Wed Dec 24 10:11:52 2025 TSocket::open() connect() <Host: user-service Port: 9090>: Connection refused\n[2025-Dec-24 10:11:52.340022] <error>: (ClientPool.h:114:Pop) Failed to connect user-service-client\nThrift: Wed Dec 24 10:11:53 2025 TSocket::open() connect() <Host: user-service Port: 9090>: Connection refused\n[2025-Dec-24 10:11:53.364934] <error>: (ClientPool.h:114:Pop) Failed to connect user-service-client\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl logs -n test-social-network -l service=home-timeline-service --tail=50 | grep -i error\")",
+      "command": "exec_shell(\"kubectl logs -n test-social-network-ad7ce5c3 -l service=home-timeline-service --tail=50 | grep -i error\")",
+      "result": "",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl logs -n test-social-network -l service=social-graph-service --tail=50\")",
+      "command": "exec_shell(\"kubectl logs -n test-social-network-ad7ce5c3 -l service=social-graph-service --tail=50\")",
+      "result": "[2025-Dec-24 10:11:56.663933] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 201 not found\n[2025-Dec-24 10:12:03.422387] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 509 not found\n[2025-Dec-24 10:12:03.426517] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 543 not found\n[2025-Dec-24 10:12:03.430202] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 755 not found\n[2025-Dec-24 10:12:03.434738] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 766 not found\n[2025-Dec-24 10:12:03.438398] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 369 not found\n[2025-Dec-24 10:12:03.442557] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 595 not found\n[2025-Dec-24 10:12:03.446195] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 264 not found\n[2025-Dec-24 10:12:03.450350] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 385 not found\n[2025-Dec-24 10:12:03.454431] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 922 not found\n[2025-Dec-24 10:12:03.457602] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 511 not found\n[2025-Dec-24 10:12:03.461091] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 166 not found\n[2025-Dec-24 10:12:03.464235] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 173 not found\n[2025-Dec-24 10:12:03.467697] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 447 not found\n[2025-Dec-24 10:12:03.472182] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 859 not found\n[2025-Dec-24 10:12:03.475203] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 83 not found\n[2025-Dec-24 10:12:03.477921] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 555 not found\n[2025-Dec-24 10:12:03.481629] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 741 not found\n[2025-Dec-24 10:12:03.484536] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 413 not found\n[2025-Dec-24 10:12:03.486781] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 164 not found\n[2025-Dec-24 10:12:03.489410] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 707 not found\n[2025-Dec-24 10:12:03.492571] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 11 not found\n[2025-Dec-24 10:12:03.496243] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 595 not found\n[2025-Dec-24 10:12:03.498798] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 290 not found\n[2025-Dec-24 10:12:03.501367] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 157 not found\n[2025-Dec-24 10:12:03.504238] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 128 not found\n[2025-Dec-24 10:12:03.507890] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 239 not found\n[2025-Dec-24 10:12:03.510938] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 78 not found\n[2025-Dec-24 10:12:03.513534] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 544 not found\n[2025-Dec-24 10:12:03.516433] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 450 not found\n[2025-Dec-24 10:12:03.519561] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 931 not found\n[2025-Dec-24 10:12:03.521868] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 745 not found\n[2025-Dec-24 10:12:03.524021] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 194 not found\n[2025-Dec-24 10:12:03.526667] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 801 not found\n[2025-Dec-24 10:12:03.530227] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 897 not found\n[2025-Dec-24 10:12:03.533694] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 159 not found\n[2025-Dec-24 10:12:03.537087] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 644 not found\n[2025-Dec-24 10:12:03.541289] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 662 not found\n[2025-Dec-24 10:12:03.545049] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 240 not found\n[2025-Dec-24 10:12:03.548903] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 116 not found\n[2025-Dec-24 10:12:03.552847] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 848 not found\n[2025-Dec-24 10:12:03.556437] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 461 not found\n[2025-Dec-24 10:12:03.559149] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 274 not found\n[2025-Dec-24 10:12:03.562414] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 11 not found\n[2025-Dec-24 10:12:03.567299] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 96 not found\n[2025-Dec-24 10:12:03.570933] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 812 not found\n[2025-Dec-24 10:12:03.573575] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 525 not found\n[2025-Dec-24 10:12:03.577584] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 270 not found\n[2025-Dec-24 10:12:03.580845] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 907 not found\n[2025-Dec-24 10:12:03.583443] <warning>: (SocialGraphHandler.h:612:GetFollowers) user_id: 387 not found\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl exec -n test-social-network $(kubectl get pod -n test-social-network -l service=compose-post-service -o jsonpath='{.items[0].metadata.name}') -- nslookup user-service\")",
+      "command": "exec_shell(\"kubectl exec -n test-social-network-ad7ce5c3 $(kubectl get pod -n test-social-network-ad7ce5c3 -l service=compose-post-service -o jsonpath='{.items[0].metadata.name}') -- nslookup user-service\")",
+      "result": "error: Internal error occurred: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec \"a91a3065707331c8aa22bfcba64a046bb5404166fa6ec3fc08b9eac48beb1b40\": OCI runtime exec failed: exec failed: unable to start container process: exec: \"nslookup\": executable file not found in $PATH: unknown\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl exec -n test-social-network $(kubectl get pod -n test-social-network -l service=user-service -o jsonpath='{.items[0].metadata.name}') -- netstat -tuln\")",
+      "command": "exec_shell(\"kubectl exec -n test-social-network-ad7ce5c3 $(kubectl get pod -n test-social-network-ad7ce5c3 -l service=user-service -o jsonpath='{.items[0].metadata.name}') -- netstat -tuln\")",
+      "result": "error: Internal error occurred: Internal error occurred: error executing command in container: failed to exec in container: failed to start exec \"01b68d73f6d13679b5801911636f1d2f7217be008931c19d61ada3b17d454c7b\": OCI runtime exec failed: exec failed: unable to start container process: exec: \"netstat\": executable file not found in $PATH: unknown\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl exec -n test-social-network $(kubectl get pod -n test-social-network -l service=user-service -o jsonpath='{.items[0].metadata.name}') -- ps aux\")",
+      "command": "exec_shell(\"kubectl exec -n test-social-network-ad7ce5c3 $(kubectl get pod -n test-social-network-ad7ce5c3 -l service=user-service -o jsonpath='{.items[0].metadata.name}') -- ps aux\")",
+      "result": "USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nroot           1  0.0  0.0 288444 10944 ?        Ssl  10:11   0:00 UserService\nroot          21  0.0  0.0  34436  2496 ?        Rs   10:12   0:00 ps aux\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get deployment -n test-social-network -o json | jq '.items[] | {name: .metadata.name, replicas: .spec.replicas, available: .status.availableReplicas}'\")",
+      "command": "exec_shell(\"kubectl get deployment -n test-social-network-ad7ce5c3 -o json | jq '.items[] | {name: .metadata.name, replicas: .spec.replicas, available: .status.availableReplicas}'\")",
+      "result": "/bin/sh: 1: jq: not found\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get pods -n test-social-network -o json | jq '.items[] | {name: .metadata.name, status: .status.phase, restarts: .status.containerStatuses[0].restartCount}'\")",
+      "command": "exec_shell(\"kubectl get pods -n test-social-network-ad7ce5c3 -o json | jq '.items[] | {name: .metadata.name, status: .status.phase, restarts: .status.containerStatuses[0].restartCount}'\")",
+      "result": "/bin/sh: 1: jq: not found\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get pods -n test-social-network --field-selector status.phase!=Running\")",
+      "command": "exec_shell(\"kubectl get pods -n test-social-network-ad7ce5c3 --field-selector status.phase!=Running\")",
+      "result": "NAME                      READY   STATUS      RESTARTS   AGE\nwrk2-job-ad7ce5c3-6qjv7   0/1     Completed   0          42s\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get pods -n test-social-network --sort-by=.metadata.creationTimestamp\")",
+      "command": "exec_shell(\"kubectl get pods -n test-social-network-ad7ce5c3 --sort-by=.metadata.creationTimestamp\")",
+      "result": "NAME                                      READY   STATUS      RESTARTS   AGE\nsocial-graph-mongodb-69ddddf895-l58lf     1/1     Running     0          86s\nuser-timeline-service-6c79dd65d6-h85xs    1/1     Running     0          86s\nhome-timeline-service-7d787c8dfd-bcc6k    1/1     Running     0          86s\ncompose-post-service-64f6c9b656-2wbdx     1/1     Running     0          86s\nmedia-frontend-fbcbcd8cd-7rcwq            1/1     Running     0          86s\nmedia-memcached-54b5cffb48-sdpm7          1/1     Running     0          86s\nmedia-mongodb-6d47ccb779-8mq59            1/1     Running     0          86s\nurl-shorten-service-7b4f9d6cfb-xqdxt      1/1     Running     0          86s\nnginx-thrift-5b6bf645f-qzrkx              1/1     Running     0          86s\nurl-shorten-memcached-999559bdb-lp7m9     1/1     Running     0          86s\ntext-service-585f7cbc5f-9c9gp             1/1     Running     0          86s\nsocial-graph-redis-f9759b67d-hsndj        1/1     Running     0          86s\nuser-mention-service-69f4955bbc-qtwzf     1/1     Running     0          85s\nurl-shorten-mongodb-77894f9b76-856zf      1/1     Running     0          85s\nsocial-graph-service-fcfb99f8f-ftbgl      1/1     Running     0          85s\npost-storage-mongodb-846dcb76b7-nms74     1/1     Running     0          85s\npost-storage-service-9bd8bd979-nnqqq      1/1     Running     0          85s\nuser-mongodb-75847cfbb-tlhnv              1/1     Running     0          85s\nunique-id-service-655cc57f6d-kp2j9        1/1     Running     0          84s\nmedia-service-5f6b5dbff8-vxwlw            1/1     Running     0          84s\njaeger-7d8548779-7mbz7                    1/1     Running     0          84s\npost-storage-memcached-5b544b79d8-w6pjf   1/1     Running     0          84s\nhome-timeline-redis-ff9499c5c-m6cb9       1/1     Running     0          84s\nuser-memcached-554fcf9578-952pk           1/1     Running     0          83s\nuser-timeline-mongodb-658f54fd68-j2hx9    1/1     Running     0          83s\nuser-timeline-redis-cbd5f6645-p6qx8       1/1     Running     0          83s\nwrk2-job-ad7ce5c3-6qjv7                   0/1     Completed   0          42s\nuser-service-6d5985bd55-mwppv             1/1     Running     0          33s\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get service user-service -n test-social-network -o yaml\")",
+      "command": "exec_shell(\"kubectl get service user-service -n test-social-network-ad7ce5c3 -o yaml\")",
+      "result": "apiVersion: v1\nkind: Service\nmetadata:\n  annotations:\n    meta.helm.sh/release-name: social-network\n    meta.helm.sh/release-namespace: test-social-network-ad7ce5c3\n  creationTimestamp: \"2025-12-24T10:10:58Z\"\n  labels:\n    app.kubernetes.io/managed-by: Helm\n  name: user-service\n  namespace: test-social-network-ad7ce5c3\n  resourceVersion: \"67892\"\n  uid: 7cf4c213-64cc-4a98-b428-5dc76f58104e\nspec:\n  clusterIP: 10.96.108.161\n  clusterIPs:\n  - 10.96.108.161\n  internalTrafficPolicy: Cluster\n  ipFamilies:\n  - IPv4\n  ipFamilyPolicy: SingleStack\n  ports:\n  - name: \"9090\"\n    port: 9090\n    protocol: TCP\n    targetPort: 9090\n  selector:\n    service: user-service\n  sessionAffinity: None\n  type: ClusterIP\nstatus:\n  loadBalancer: {}\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get endpoints -n test-social-network\")",
+      "command": "exec_shell(\"kubectl get endpoints -n test-social-network-ad7ce5c3\")",
+      "result": "NAME                     ENDPOINTS                                                            AGE\ncompose-post-service     10.244.1.81:9090                                                     89s\nhome-timeline-redis      10.244.1.98:6379                                                     89s\nhome-timeline-service    10.244.1.89:9090                                                     88s\njaeger                   10.244.1.102:6832,10.244.1.102:9411,10.244.1.102:14268 + 4 more...   89s\nmedia-frontend           10.244.1.86:8080                                                     88s\nmedia-memcached          10.244.1.90:11211                                                    88s\nmedia-mongodb            10.244.1.79:27017                                                    89s\nmedia-service            10.244.1.100:9090                                                    89s\nnginx-thrift             10.244.1.87:8080                                                     89s\npost-storage-memcached   10.244.1.101:11211                                                   89s\npost-storage-mongodb     10.244.1.92:27017                                                    89s\npost-storage-service     10.244.1.97:9090                                                     89s\nsocial-graph-mongodb     10.244.1.82:27017                                                    89s\nsocial-graph-redis       10.244.1.80:6379                                                     89s\nsocial-graph-service     10.244.1.94:9090                                                     89s\ntext-service             10.244.1.84:9090                                                     89s\nunique-id-service        10.244.1.99:9090                                                     89s\nurl-shorten-memcached    10.244.1.88:11211                                                    89s\nurl-shorten-mongodb      10.244.1.93:27017                                                    89s\nurl-shorten-service      10.244.1.83:9090                                                     89s\nuser-memcached           10.244.1.105:11211                                                   89s\nuser-mention-service     10.244.1.91:9090                                                     89s\nuser-mongodb             10.244.1.96:27017                                                    89s\nuser-service             10.244.1.107:9090                                                    89s\nuser-timeline-mongodb    10.244.1.104:27017                                                   89s\nuser-timeline-redis      10.244.1.103:6379                                                    89s\nuser-timeline-service    10.244.1.85:9090                                                     88s\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl describe namespace test-social-network\")",
+      "command": "exec_shell(\"kubectl describe namespace test-social-network\")",
+      "result": "Name:         test-social-network-ad7ce5c3\nLabels:       kubernetes.io/metadata.name=test-social-network-ad7ce5c3\n              name=test-social-network-ad7ce5c3\nAnnotations:  <none>\nStatus:       Active\n\nNo resource quota.\n\nNo LimitRange resource.\n\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get limitrange -n test-social-network\")",
+      "command": "exec_shell(\"kubectl get limitrange -n test-social-network-ad7ce5c3\")",
+      "result": "No resources found in test-social-network-ad7ce5c3 namespace.\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get resourcequota -n test-social-network\")",
+      "command": "exec_shell(\"kubectl get resourcequota -n test-social-network-ad7ce5c3\")",
+      "result": "No resources found in test-social-network-ad7ce5c3 namespace.\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl api-resources --namespaced=true | grep -E 'NAME|deployments|pods|services'\")",
+      "command": "exec_shell(\"kubectl api-resources --namespaced=true | grep -E 'NAME|deployments|pods|services'\")",
+      "result": "NAME                        SHORTNAMES   APIVERSION                     NAMESPACED   KIND\npods                        po           v1                             true         Pod\nservices                    svc          v1                             true         Service\ndeployments                 deploy       apps/v1                        true         Deployment\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get deployment -n test-social-network -o custom-columns=NAME:.metadata.name,REPLICAS:.spec.replicas,AVAILABLE:.status.availableReplicas,IMAGE:.spec.template.spec.containers[0].image\")",
+      "command": "exec_shell(\"kubectl get deployment -n test-social-network-ad7ce5c3 -o custom-columns=NAME:.metadata.name,REPLICAS:.spec.replicas,AVAILABLE:.status.availableReplicas,IMAGE:.spec.template.spec.containers[0].image\")",
+      "result": "NAME                     REPLICAS   AVAILABLE   IMAGE\ncompose-post-service     1          1           docker.io/deathstarbench/social-network-microservices:latest\nhome-timeline-redis      1          1           docker.io/library/redis:6.2.4\nhome-timeline-service    1          1           docker.io/deathstarbench/social-network-microservices:latest\njaeger                   1          1           docker.io/jaegertracing/all-in-one:1.57\nmedia-frontend           1          1           docker.io/yg397/media-frontend:xenial\nmedia-memcached          1          1           docker.io/library/memcached:1.6.7\nmedia-mongodb            1          1           docker.io/library/mongo:4.4.6\nmedia-service            1          1           docker.io/deathstarbench/social-network-microservices:latest\nnginx-thrift             1          1           docker.io/yg397/openresty-thrift:xenial\npost-storage-memcached   1          1           docker.io/library/memcached:1.6.7\npost-storage-mongodb     1          1           docker.io/library/mongo:4.4.6\npost-storage-service     1          1           docker.io/deathstarbench/social-network-microservices:latest\nsocial-graph-mongodb     1          1           docker.io/library/mongo:4.4.6\nsocial-graph-redis       1          1           docker.io/library/redis:6.2.4\nsocial-graph-service     1          1           docker.io/deathstarbench/social-network-microservices:latest\ntext-service             1          1           docker.io/deathstarbench/social-network-microservices:latest\nunique-id-service        1          1           docker.io/deathstarbench/social-network-microservices:latest\nurl-shorten-memcached    1          1           docker.io/library/memcached:1.6.7\nurl-shorten-mongodb      1          1           docker.io/library/mongo:4.4.6\nurl-shorten-service      1          1           docker.io/deathstarbench/social-network-microservices:latest\nuser-memcached           1          1           docker.io/library/memcached:1.6.7\nuser-mention-service     1          1           docker.io/deathstarbench/social-network-microservices:latest\nuser-mongodb             1          1           docker.io/library/mongo:4.4.6\nuser-service             1          1           docker.io/deathstarbench/social-network-microservices:latest\nuser-timeline-mongodb    1          1           docker.io/library/mongo:4.4.6\nuser-timeline-redis      1          1           docker.io/library/redis:6.2.4\nuser-timeline-service    1          1           docker.io/deathstarbench/social-network-microservices:latest\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get pods -n test-social-network -o custom-columns=NAME:.metadata.name,STATUS:.status.phase,NODE:.spec.nodeName,IP:.status.podIP\")",
+      "command": "exec_shell(\"kubectl get pods -n test-social-network-ad7ce5c3 -o custom-columns=NAME:.metadata.name,STATUS:.status.phase,NODE:.spec.nodeName,IP:.status.podIP\")",
+      "result": "NAME                                      STATUS      NODE          IP\ncompose-post-service-64f6c9b656-2wbdx     Running     kind-worker   10.244.1.81\nhome-timeline-redis-ff9499c5c-m6cb9       Running     kind-worker   10.244.1.98\nhome-timeline-service-7d787c8dfd-bcc6k    Running     kind-worker   10.244.1.89\njaeger-7d8548779-7mbz7                    Running     kind-worker   10.244.1.102\nmedia-frontend-fbcbcd8cd-7rcwq            Running     kind-worker   10.244.1.86\nmedia-memcached-54b5cffb48-sdpm7          Running     kind-worker   10.244.1.90\nmedia-mongodb-6d47ccb779-8mq59            Running     kind-worker   10.244.1.79\nmedia-service-5f6b5dbff8-vxwlw            Running     kind-worker   10.244.1.100\nnginx-thrift-5b6bf645f-qzrkx              Running     kind-worker   10.244.1.87\npost-storage-memcached-5b544b79d8-w6pjf   Running     kind-worker   10.244.1.101\npost-storage-mongodb-846dcb76b7-nms74     Running     kind-worker   10.244.1.92\npost-storage-service-9bd8bd979-nnqqq      Running     kind-worker   10.244.1.97\nsocial-graph-mongodb-69ddddf895-l58lf     Running     kind-worker   10.244.1.82\nsocial-graph-redis-f9759b67d-hsndj        Running     kind-worker   10.244.1.80\nsocial-graph-service-fcfb99f8f-ftbgl      Running     kind-worker   10.244.1.94\ntext-service-585f7cbc5f-9c9gp             Running     kind-worker   10.244.1.84\nunique-id-service-655cc57f6d-kp2j9        Running     kind-worker   10.244.1.99\nurl-shorten-memcached-999559bdb-lp7m9     Running     kind-worker   10.244.1.88\nurl-shorten-mongodb-77894f9b76-856zf      Running     kind-worker   10.244.1.93\nurl-shorten-service-7b4f9d6cfb-xqdxt      Running     kind-worker   10.244.1.83\nuser-memcached-554fcf9578-952pk           Running     kind-worker   10.244.1.105\nuser-mention-service-69f4955bbc-qtwzf     Running     kind-worker   10.244.1.91\nuser-mongodb-75847cfbb-tlhnv              Running     kind-worker   10.244.1.96\nuser-service-6d5985bd55-mwppv             Running     kind-worker   10.244.1.107\nuser-timeline-mongodb-658f54fd68-j2hx9    Running     kind-worker   10.244.1.104\nuser-timeline-redis-cbd5f6645-p6qx8       Running     kind-worker   10.244.1.103\nuser-timeline-service-6c79dd65d6-h85xs    Running     kind-worker   10.244.1.85\nwrk2-job-ad7ce5c3-6qjv7                   Succeeded   kind-worker   10.244.1.106\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get deployment user-service -n test-social-network -o jsonpath='{.metadata.annotations}'\")",
+      "command": "exec_shell(\"kubectl get deployment user-service -n test-social-network-ad7ce5c3 -o jsonpath='{.metadata.annotations}'\")",
+      "result": "{\"deployment.kubernetes.io/revision\":\"1\",\"meta.helm.sh/release-name\":\"social-network\",\"meta.helm.sh/release-namespace\":\"test-social-network-ad7ce5c3\"}",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get deployment user-service -n test-social-network -o jsonpath='{.metadata.labels}'\")",
+      "command": "exec_shell(\"kubectl get deployment user-service -n test-social-network-ad7ce5c3 -o jsonpath='{.metadata.labels}'\")",
+      "result": "{\"app.kubernetes.io/managed-by\":\"Helm\",\"service\":\"user-service\"}",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get pods -n test-social-network -l service=user-service -o json | jq '.items[] | {name: .metadata.name, qos: .status.qosClass, resources: .spec.containers[0].resources}'\")",
+      "command": "exec_shell(\"kubectl get pods -n test-social-network-ad7ce5c3 -l service=user-service -o json | jq '.items[] | {name: .metadata.name, qos: .status.qosClass, resources: .spec.containers[0].resources}'\")",
+      "result": "/bin/sh: 1: jq: not found\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl top pods -n test-social-network -l service=user-service\")",
+      "command": "exec_shell(\"kubectl top pods -n test-social-network-ad7ce5c3 -l service=user-service\")",
+      "result": "error: Metrics API not available\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl top pods -n test-social-network --sort-by=memory\")",
+      "command": "exec_shell(\"kubectl top pods -n test-social-network-ad7ce5c3 --sort-by=memory\")",
+      "result": "error: Metrics API not available\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get networkpolicies -n test-social-network\")",
+      "command": "exec_shell(\"kubectl get networkpolicies -n test-social-network-ad7ce5c3\")",
+      "result": "No resources found in test-social-network-ad7ce5c3 namespace.\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get ingress -n test-social-network\")",
+      "command": "exec_shell(\"kubectl get ingress -n test-social-network-ad7ce5c3\")",
+      "result": "No resources found in test-social-network-ad7ce5c3 namespace.\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get serviceaccounts -n test-social-network\")",
+      "command": "exec_shell(\"kubectl get serviceaccounts -n test-social-network-ad7ce5c3\")",
+      "result": "NAME      SECRETS   AGE\ndefault   0         100s\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get roles,rolebindings -n test-social-network\")",
+      "command": "exec_shell(\"kubectl get roles,rolebindings -n test-social-network-ad7ce5c3\")",
+      "result": "No resources found in test-social-network-ad7ce5c3 namespace.\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get persistentvolumes\")",
+      "command": "exec_shell(\"kubectl get persistentvolumes\")",
+      "result": "NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                       STORAGECLASS       VOLUMEATTRIBUTESCLASS   REASON   AGE\npvc-38d48591-b944-4d91-aa2c-bcf630ac60f8   8Gi        RWO            Delete           Bound    observe/prometheus-server   openebs-hostpath   <unset>                          108m\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get persistentvolumeclaims -n test-social-network\")",
+      "command": "exec_shell(\"kubectl get persistentvolumeclaims -n test-social-network-ad7ce5c3\")",
+      "result": "No resources found in test-social-network-ad7ce5c3 namespace.\n",
+      "success": true,
+      "attempt": 1
+    },
+    {
+      "original_command": "exec_shell(\"kubectl get storageclasses\")",
+      "command": "exec_shell(\"kubectl get storageclasses\")",
+      "result": "NAME                         PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE\nopenebs-device               openebs.io/local        Delete          WaitForFirstConsumer   false                  109m\nopenebs-hostpath (default)   openebs.io/local        Delete          WaitForFirstConsumer   false                  109m\nstandard (default)           rancher.io/local-path   Delete          WaitForFirstConsumer   false                  112m\n",
+      "success": true,
+      "attempt": 1
+    }
+  ]
+}
