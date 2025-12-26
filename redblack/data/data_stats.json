@@ -1,0 +1,19 @@
+{
+  "total_examples": 6157,
+  "train_size": 5173,
+  "val_size": 626,
+  "test_size": 358,
+  "scenarios": {
+    "agi_safety": 1168,
+    "climate_cooperation": 1364,
+    "election_crisis": 1248,
+    "standards_coordination": 1251,
+    "pandemic_vaccines": 1126
+  },
+  "vote_distribution": {
+    "A": 6157,
+    "B": 0
+  },
+  "use_system_prompt": true,
+  "system_prompt": "You are a strategic advisor in a multi-round negotiation game. \nYour task is to analyze the situation, consider your teammates' views, provide reasoned analysis, and vote A or B.\nFormat your final vote as: VOTE: A or VOTE: B"
+}
