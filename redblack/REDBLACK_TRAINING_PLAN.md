@@ -123,7 +123,7 @@ bf16 = True
 
 ---
 
-## 📁 Files Created
+## 📁 Files Structure
 
 ```
 /root/yuxi/sft/redblack/
@@ -131,16 +131,16 @@ bf16 = True
 │   ├── sft_combined_batch_and_stream_1_filtered.json
 │   └── sft_combined_batches_2_3_filtered.json
 ├── data/                                    # Processed training data
-│   ├── redblack_train.jsonl                 # 5,173 samples
-│   ├── redblack_val.jsonl                   # 626 samples
-│   ├── redblack_test.jsonl                  # 358 samples
+│   ├── train.jsonl                          # 5,173 samples
+│   ├── val.jsonl                            # 626 samples
+│   ├── test.jsonl                           # 358 samples
 │   ├── train_*.jsonl                        # Per-scenario train files
 │   ├── val_*.jsonl                          # Per-scenario val files
 │   ├── test_*.jsonl                         # Per-scenario test files
-│   └── data_stats.json
-├── prepare_redblack_data_v3.py              # Data preprocessing script
-├── train_redblack_v2.py                     # Training script
-├── run_training.sh                          # Training launcher
+│   └── stats.json
+├── prepare_data.py                          # Data preprocessing (with prompt mapping)
+├── train.py                                 # Training script (with GPU estimation)
+├── run.sh                                   # Training launcher
 └── REDBLACK_TRAINING_PLAN.md               # This document
 ```
 
@@ -151,35 +151,67 @@ bf16 = True
 ### 1. Prepare Data (if not done)
 ```bash
 cd /root/yuxi/sft/redblack
-python prepare_redblack_data_v3.py --data_dir hf_dataset --output_dir data --save_by_scenario
+python prepare_data.py --data_dir hf_dataset --output_dir data --save_by_scenario
 ```
 
-### 2. Run Training
+### 2. Estimate Resources
+```bash
+# Check GPU requirements without training
+python train.py --estimate_only --model Qwen/Qwen3-14B
+```
+
+### 3. Run Training
 ```bash
 # Using Qwen3-8B (recommended for testing)
-python train_redblack_v2.py \
+python train.py \
     --model Qwen/Qwen3-8B \
-    --epochs 5 \
+    --epochs 3 \
     --lora_r 64 \
     --lr 2e-5 \
     --max_length 4096 \
-    --output_dir outputs_redblack \
-    --no_wandb
+    --output outputs
 
 # Using Qwen3-14B (production)
-python train_redblack_v2.py \
+python train.py \
     --model Qwen/Qwen3-14B \
-    --epochs 5 \
+    --epochs 3 \
     --lora_r 64 \
     --lr 2e-5 \
     --max_length 4096 \
-    --output_dir outputs_redblack_14b
+    --output outputs_14b \
+    --wandb redblack-sft
 ```
 
-### 3. Using Shell Script
+### 4. Using Shell Script
 ```bash
-./run_training.sh --model Qwen/Qwen3-8B --no-wandb
+# Prepare data
+./run.sh prepare
+
+# Estimate resources
+./run.sh estimate
+
+# Train with defaults (Qwen3-8B)
+./run.sh train
+
+# Train with custom config
+MODEL=Qwen/Qwen3-14B EPOCHS=5 ./run.sh train
 ```
+
+### 🖥️ GPU Requirements (Estimated)
+
+| Model | VRAM Needed | A100 (80GB) | H100 (96GB) | H200 (192GB) |
+|-------|-------------|-------------|-------------|--------------|
+| Qwen3-8B | ~32GB | ✅ 1 card | ✅ 1 card | ✅ 1 card |
+| Qwen3-14B | ~51GB | ✅ 1 card | ✅ 1 card | ✅ 1 card |
+| Qwen3-32B | ~100GB | ❌ 2 cards | ✅ 1 card | ✅ 1 card |
+
+### ⏱️ Training Time Estimates (3 epochs, 5,173 samples)
+
+| GPU | Steps | Time |
+|-----|-------|------|
+| A100 | 972 | ~1.1 hours |
+| H100 | 972 | ~0.7 hours |
+| H200 | 972 | ~0.4 hours |
 
 ---
 

@@ -1,0 +1,25 @@
+{
+  "total_examples": 6157,
+  "train_size": 5173,
+  "val_size": 626,
+  "test_size": 358,
+  "scenarios": {
+    "agi_safety": 1168,
+    "climate_cooperation": 1364,
+    "election_crisis": 1248,
+    "standards_coordination": 1251,
+    "pandemic_vaccines": 1126
+  },
+  "vote_distribution": {
+    "A": 6157,
+    "B": 0
+  },
+  "prompt_match_rate": 1.0,
+  "scenario_descriptions": {
+    "agi_safety": "AGI Safety Research Sharing",
+    "pandemic_vaccines": "Pandemic Vaccine Allocation",
+    "climate_cooperation": "Climate Adaptation Strategy",
+    "election_crisis": "Election Year Economic Crisis (HARD)",
+    "standards_coordination": "Software Standards Coordination (NEUTRAL)"
+  }
+}
